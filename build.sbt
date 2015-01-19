@@ -10,5 +10,9 @@ libraryDependencies ++= Seq(
   jdbc,
   anorm,
   cache,
-  ws
+  ws,
+  "org.postgresql" % "postgresql" % "9.3-1102-jdbc41",
+  // WebJars pull in client-side web libraries
+  "org.webjars" %% "webjars-play" % "2.3.0-2",
+  "org.webjars" % "bootstrap" % "3.3.1"
 )
