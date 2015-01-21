@@ -23,7 +23,7 @@ object User {
       val userStrings: List[(Long, String, String, String)] = SQL(
       """
       select id, email, password, name from dd_user u
-      where u.id = {id};
+      where u.id = ${id};
       """
       ).on("id" -> id)
         .as (long("id")~ str("email") ~ str("password") ~ str("name") map(flatten) * )
