@@ -1,4 +1,4 @@
-package controllers
+package security
 
 import jp.t2v.lab.play2.auth.{AuthConfig, AuthElement}
 import models.{Account, Role}
