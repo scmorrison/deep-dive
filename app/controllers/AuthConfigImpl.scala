@@ -13,7 +13,7 @@ import scala.reflect._
 trait AuthConfigImpl extends AuthConfig {
 
   // a type that is used to identify a user
-  type Id = Int
+  type Id = Long
 
   // a type that represents a user
   type User = Account
@@ -28,7 +28,7 @@ trait AuthConfigImpl extends AuthConfig {
   val sessionTimeoutInSeconds: Int = 3600
 
   // a function that returns a user from an id
-  def resolveUser(id: Id)(implicit ctx: ExecutionContext): Future[Option[User]] = Future.successful(Account.findById(id))
+  def resolveUser(id: Id)(implicit ctx: ExecutionContext) = Future.successful(null)
 
   // where to redirect after successful login
   def loginSucceeded(request: RequestHeader)(implicit ctx: ExecutionContext): Future[Result] =

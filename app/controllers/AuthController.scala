@@ -4,12 +4,12 @@ import play.api.mvc._
 import jp.t2v.lab.play2.auth.LoginLogout
 import play.api.data._
 import play.api.data.Forms._
-import models.{Account}
+import services.AccountService
 
 object AuthController extends Controller with LoginLogout with AuthConfigImpl {
 
   val loginForm = Form {
-    mapping("email" -> email, "password" -> text)(Account.authenticate)(_.map( u => (u.email, "")))
+    mapping("email" -> email, "password" -> text)(AccountService.authenticate)(_.map( u => (u.email, "")))
       .verifying("Invalid email or password", result => result.isDefined)
   }
 
