@@ -1,5 +1,8 @@
 package models
 
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+
 sealed trait Role
 
 object Role {
@@ -12,6 +15,7 @@ object Role {
     case "NormalUser"    => NormalUser
     case _ => throw new IllegalArgumentException()
   }
+
 }
 
 case class Account(
@@ -19,17 +23,38 @@ case class Account(
   email: String,
   password: Option[String],
   name: String,
-  role: Role
-) {
+  role: String
+)
 
-  def getRole(): Role = {
-    return this.role
-  }
+object Account {
+
+  implicit val AccountFromJson: Reads[Account] = (
+    (__ \ "id").readNullable[Long] ~
+      (__ \ "email").read(Reads.email) ~
+      (__ \ "password").readNullable[String] ~
+      (__ \ "name").read[String] ~
+      (__ \ "role").read[String]
+  )(Account.apply _)
+
+  implicit val AccountToJson: Writes[Account] = (
+    (__ \ "id").writeNullable[Long] ~
+      (__ \ "email").write[String] ~
+      (__ \ "password").writeNullable[String] ~
+      (__ \ "name").write[String] ~
+      (__ \ "role").writeNullable[String]
+  )((account: Account) => (
+    account.id,
+    account.email,
+    None,
+    account.name,
+    None  // TODO: implement role
+  ))
 }
 
 trait AccountRepository {
 
   def findOneByEmailAndPassword(email: String, password: String): Option[Account]
+  def findOneById(id: Long): Option[Account]
 }
 
 object AnormAccountRepository extends AccountRepository {
@@ -49,7 +74,7 @@ object AnormAccountRepository extends AccountRepository {
   val accountParser: RowParser[Account] = {
 
     long("id") ~ str("email") ~ str("name") map {
-      case i~e~n => Account(id=Some(i),email=e,password=null,name=n, Role.NormalUser)
+      case i~e~n => Account(id=Some(i),email=e,password=null,name=n, Role.NormalUser.toString)
     }
   }
 
@@ -72,7 +97,7 @@ object AnormAccountRepository extends AccountRepository {
     DB.withConnection { implicit c =>
       val maybeAccount: Option[Account] = SQL(
         """
-        select id, email, name from user where id={id};
+        select id, email, name from dd_user where id={id};
         """
       ).on(
         'id -> id

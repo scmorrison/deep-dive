@@ -3,43 +3,50 @@ package controllers
 import java.util.UUID
 import play.api.libs.json._
 import play.api.mvc._
-import jp.t2v.lab.play2.auth.{AuthElement, LoginLogout}
 import models.Role.{NormalUser, Administrator}
 import play.api.data._
 import play.api.data.Forms._
-import play.cache._
+import play.api.cache._
 import services.AccountService
-import models.AnormAccountRepository
-import security.AuthConfigImpl
+import models.{AnormAccountRepository, Account}
 
-object Application extends Controller with AuthElement with LoginLogout with AuthConfigImpl {
+/**
+ * Security actions that should be used by all controllers that need to protect their actions.
+ * Can be composed to fine-tune access control.
+ */
+trait Security { self: Controller =>
 
-  val accountService = new AccountService(AnormAccountRepository)
-  val AuthTokenCookieKey = "XSRF-TOKEN"
   implicit val app: play.api.Application = play.api.Play.current
+
+  val AuthTokenHeader = "X-XSRF-TOKEN"
+  val AuthTokenCookieKey = "XSRF-TOKEN"
+  val AuthTokenUrlKey = "auth"
+
+  /** Checks that a token is either in the header or in the query string */
+  def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => Long => Request[A] => Result): Action[A] =
+    Action(p) { implicit request =>
+      val maybeToken = request.headers.get(AuthTokenHeader).orElse(request.getQueryString(AuthTokenUrlKey))
+      maybeToken flatMap { token =>
+        Cache.getAs[Long](token) map { userid =>
+          f(token)(userid)(request)
+        }
+      } getOrElse Unauthorized(Json.obj("err" -> "No Token"))
+    }
+
+}
+
+/** General Application actions, mainly session management */
+trait Application extends Controller with Security {
 
   lazy val CacheExpiration =
     app.configuration.getInt("cache.expiration").getOrElse(60 /*seconds*/ * 2 /* minutes */)
 
-  // example unsecured action
+  lazy val accountService = new AccountService(AnormAccountRepository)
+
+  /** Returns the index page */
   def index = Action {
-    Ok(views.html.index("Deep Dive!"))
+    Ok(views.html.index("Go Deep Dive!"))
   }
-
-  // TODO: this will be a secured page for a user
-  def main = StackAction(AuthorityKey -> NormalUser) { implicit request =>
-    val user = loggedIn
-    val title = "message main"
-    Ok(views.html.index(title))
-  }
-
-  // TODO: this will be a secured page for an administrator
-  def write = StackAction(AuthorityKey -> Administrator) { implicit request =>
-    val user = loggedIn
-    val title = "write message"
-    Ok(views.html.index(title))
-  }
-
 
   case class Login(email: String, password: String)
 
@@ -62,38 +69,42 @@ object Application extends Controller with AuthElement with LoginLogout with Aut
     }
   }
 
-  // TODO: login action
+  /** Check credentials, generate token and serve it back as auth token in a Cookie */
   def login = Action(parse.json) { implicit request =>
-    loginForm.bind(request.body).fold(
+    loginForm.bind(request.body).fold( // Bind JSON body to form values
       formErrors => BadRequest(Json.obj("err" -> formErrors.errorsAsJson)),
       loginData => {
         accountService.authenticate(loginData.email, loginData.password) map { user =>
-          val token = UUID.randomUUID().toString
+          val token = java.util.UUID.randomUUID().toString
           Ok(Json.obj(
             "authToken" -> token,
-            "userId" -> user.id
+            "userId" -> user.id.get
           )).withToken(token -> user.id.get)
-        } getOrElse NotFound(Json.obj("err" -> "Account not found or Password invalid"))
+        } getOrElse NotFound(Json.obj("err" -> "Account Not Found or Password Invalid"))
       }
     )
   }
 
-  // TODO: logout action
+  /** Invalidate the token in the Cache and discard the cookie */
   def logout = Action { implicit request =>
-    // do something
-    Ok(views.html.index("hello"))
+    request.headers.get(AuthTokenHeader) map { token =>
+      Ok(Json.obj(
+        "message" -> "ok"
+      )).discardingToken(token)
+    } getOrElse BadRequest(Json.obj("err" -> "No Token"))
   }
 
-  // TODO: logout action
-  def ping = Action { implicit request =>
-    // do something
-    Ok(views.html.index("hello"))
-  }
-
-
-  // TODO: authenticate action
-  def authenticate = Action { implicit request =>
-    Ok(views.html.index("hello"))
+  /**
+   * Returns the current user's ID if a valid token is transmitted.
+   * Also sets the cookie (useful in some edge cases).
+   * This action can be used by the route service.
+   */
+  def ping() = HasToken() { token => userId => implicit request =>
+    accountService.findOneById (userId) map { user =>
+      Ok(Json.obj("userId" -> userId)).withToken(token -> userId)
+    } getOrElse NotFound (Json.obj("err" -> "Account Not Found"))
   }
 
 }
+
+object Application extends Application
