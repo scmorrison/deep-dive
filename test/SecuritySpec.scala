@@ -40,7 +40,7 @@ class AccountServiceSpec extends PlaySpec with MockitoSugar {
 
       val actual = accountService.authenticate("test@example.com", "secret")
 
-      actual mustBe Some(Account)
+      actual mustBe Some(account)
     }
   }
 }
