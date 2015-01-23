@@ -1,12 +1,12 @@
 package services
 
 import models.Account
-import models.AnormAccountRepository
+import models.AccountRepository
 
 
-object AccountService {
+class AccountService(accountRepository: AccountRepository) {
 
   def authenticate(email: String, password: String): Option[Account] = {
-    AnormAccountRepository.findOneByEmailAndPassword(email, password)
+    accountRepository.findOneByEmailAndPassword(email, password)
   }
 }

@@ -19,5 +19,5 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.3.1",
   "org.webjars" % "angularjs" % "1.3.10",
   "org.webjars" % "requirejs" % "2.1.15",
-  "org.scalatestplus" %% "play" % "1.1.0" % "test"
+  "org.scalatestplus" %% "play" % "1.2.0" % "test"
 )
