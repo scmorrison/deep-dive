@@ -57,7 +57,7 @@ object AnormAccountRepository extends AccountRepository {
     DB.withConnection{ implicit c =>
       val maybeAccount: Option[Account] = SQL(
         """
-        select id, email, name from user where email={email} and password={password};
+        select id, email, name from dd_user where email={email} and password={password};
         """
       ).on(
         'email -> email,
