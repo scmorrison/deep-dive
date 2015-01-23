@@ -6,6 +6,7 @@ import models.Role.{NormalUser, Administrator}
 import play.api.data._
 import play.api.data.Forms._
 import services.AccountService
+import models.AnormAccountRepository
 import security.AuthConfigImpl
 
 object Application extends Controller with AuthElement with LoginLogout with AuthConfigImpl {
@@ -32,7 +33,7 @@ object Application extends Controller with AuthElement with LoginLogout with Aut
 
   // TODO: future login form
   val loginForm = Form {
-    mapping("email" -> email, "password" -> text)(AccountService.authenticate)(_.map( u => (u.email, "")))
+    mapping("email" -> email, "password" -> text)(new AccountService(AnormAccountRepository).authenticate)(_.map( u => (u.email, "")))
       .verifying("Invalid email or password", result => result.isDefined)
   }
 
