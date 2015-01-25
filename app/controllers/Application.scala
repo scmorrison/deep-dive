@@ -3,7 +3,6 @@ package controllers
 import java.util.UUID
 import play.api.libs.json._
 import play.api.mvc._
-import models.Role.{NormalUser, Administrator}
 import play.api.data._
 import play.api.data.Forms._
 import play.api.cache._
@@ -27,8 +26,8 @@ trait Security { self: Controller =>
     Action(p) { implicit request =>
       val maybeToken = request.headers.get(AuthTokenHeader).orElse(request.getQueryString(AuthTokenUrlKey))
       maybeToken flatMap { token =>
-        Cache.getAs[Long](token) map { userid =>
-          f(token)(userid)(request)
+        Cache.getAs[Long](token) map { accountId =>
+          f(token)(accountId)(request)
         }
       } getOrElse Unauthorized(Json.obj("err" -> "No Token"))
     }
@@ -74,12 +73,12 @@ trait Application extends Controller with Security {
     loginForm.bind(request.body).fold( // Bind JSON body to form values
       formErrors => BadRequest(Json.obj("err" -> formErrors.errorsAsJson)),
       loginData => {
-        accountService.authenticate(loginData.email, loginData.password) map { user =>
+        accountService.authenticate(loginData.email, loginData.password) map { account =>
           val token = java.util.UUID.randomUUID().toString
           Ok(Json.obj(
             "authToken" -> token,
-            "userId" -> user.id.get
-          )).withToken(token -> user.id.get)
+            "accountId" -> account.id.get
+          )).withToken(token -> account.id.get)
         } getOrElse NotFound(Json.obj("err" -> "Account Not Found or Password Invalid"))
       }
     )
@@ -95,13 +94,13 @@ trait Application extends Controller with Security {
   }
 
   /**
-   * Returns the current user's ID if a valid token is transmitted.
+   * Returns the current account's ID if a valid token is transmitted.
    * Also sets the cookie (useful in some edge cases).
    * This action can be used by the route service.
    */
-  def ping() = HasToken() { token => userId => implicit request =>
-    accountService.findOneById (userId) map { user =>
-      Ok(Json.obj("userId" -> userId)).withToken(token -> userId)
+  def ping() = HasToken() { token => accountId => implicit request =>
+    accountService.findOneById (accountId) map { account =>
+      Ok(Json.obj("accountId" -> accountId)).withToken(token -> accountId)
     } getOrElse NotFound (Json.obj("err" -> "Account Not Found"))
   }
 
