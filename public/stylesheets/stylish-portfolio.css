@@ -237,3 +237,21 @@ hr.small {
 footer {
     padding: 100px 0;
 }
+
+legend {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    border-color: none;
+    border-image: none;
+    border-style: none none solid;
+    border-width: 0;
+    color: #333;
+    display: block;
+    font-size: 48px;
+    line-height: inherit;
+    margin-bottom: 20px;
+    padding: 0;
+    width: 100%;
+}
