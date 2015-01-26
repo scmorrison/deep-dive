@@ -82,7 +82,13 @@ object AnormUserRepository extends UserRepository {
     DB.withConnection{ implicit c =>
       val maybeUser: Option[User] = SQL(
         """
-        select id, email, name from dd_user where email={email} and password={password};
+        select u.id as id, u.email as email, u.name as name, r.name as role
+        from dd_user u
+        join dd_user_role ur
+        on ur.user_id = u.id
+        join dd_role r
+        on r.id = ur.role_id
+        where u.email = {email} and password={password}
         """
       ).on(
         'email -> email,
@@ -97,7 +103,13 @@ object AnormUserRepository extends UserRepository {
     DB.withConnection { implicit c =>
       val maybeUser: Option[User] = SQL(
         """
-        select id, email, name from dd_user where id={id};
+        select u.id as id, u.email as email, u.name as name, r.name as role
+        from dd_user u
+        join dd_user_role ur
+        on ur.user_id = u.id
+        join dd_role r
+        on r.id = ur.role_id
+        where u.id={id};
         """
       ).on(
         'id -> id
