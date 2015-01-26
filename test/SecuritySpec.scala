@@ -4,8 +4,8 @@ import org.scalatestplus.play._
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.scalatest.mock.MockitoSugar
-import models.{AccountRepository, Account}
-import services.AccountService
+import models.{UserRepository, User}
+import services.UserService
 import models.Role.NormalUser
 
 
@@ -13,18 +13,18 @@ import models.Role.NormalUser
 /**
   example test
   */
-class AccountServiceSpec extends PlaySpec with MockitoSugar {
+class UserServiceSpec extends PlaySpec with MockitoSugar {
 
-  "AccountService#authenticate" should {
+  "UserService#authenticate" should {
     "be true when the proper credentials are provided" in {
-      val accountService = new AccountService(mock[AccountRepository])
-      val account = new Account(Some(1), "test@example.com",Some("secret"),"tester tester", "NormalUser")
-      when(accountService.authenticate(any[String], any[String])) thenReturn Some(account)
+      val userService = new UserService(mock[UserRepository])
+      val user = new User(Some(1), "test@example.com",Some("secret"),"tester tester", "NormalUser")
+      when(userService.authenticate(any[String], any[String])) thenReturn Some(user)
 
 
-      val actual = accountService.authenticate("test@example.com", "secret")
+      val actual = userService.authenticate("test@example.com", "secret")
 
-      actual mustBe Some(account)
+      actual mustBe Some(user)
     }
   }
 }
