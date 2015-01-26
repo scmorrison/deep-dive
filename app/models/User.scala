@@ -18,7 +18,7 @@ object Role {
 
 }
 
-case class Account(
+case class User(
   id: Option[Long],
   email: String,
   password: Option[String],
@@ -26,38 +26,38 @@ case class Account(
   role: String
 )
 
-object Account {
+object User {
 
-  implicit val AccountFromJson: Reads[Account] = (
+  implicit val UserFromJson: Reads[User] = (
     (__ \ "id").readNullable[Long] ~
       (__ \ "email").read(Reads.email) ~
       (__ \ "password").readNullable[String] ~
       (__ \ "name").read[String] ~
       (__ \ "role").read[String]
-  )(Account.apply _)
+  )(User.apply _)
 
-  implicit val AccountToJson: Writes[Account] = (
+  implicit val UserToJson: Writes[User] = (
     (__ \ "id").writeNullable[Long] ~
       (__ \ "email").write[String] ~
       (__ \ "password").writeNullable[String] ~
       (__ \ "name").write[String] ~
       (__ \ "role").writeNullable[String]
-  )((account: Account) => (
-    account.id,
-    account.email,
+  )((user: User) => (
+    user.id,
+    user.email,
     None,
-    account.name,
+    user.name,
     None  // TODO: implement role
   ))
 }
 
-trait AccountRepository {
+trait UserRepository {
 
-  def findOneByEmailAndPassword(email: String, password: String): Option[Account]
-  def findOneById(id: Long): Option[Account]
+  def findOneByEmailAndPassword(email: String, password: String): Option[User]
+  def findOneById(id: Long): Option[User]
 }
 
-object AnormAccountRepository extends AccountRepository {
+object AnormUserRepository extends UserRepository {
 
   import anorm._
   import anorm.SqlParser._
@@ -71,38 +71,38 @@ object AnormAccountRepository extends AccountRepository {
     }
   }
 
-  val accountParser: RowParser[Account] = {
+  val userParser: RowParser[User] = {
 
     long("id") ~ str("email") ~ str("name") map {
-      case i~e~n => Account(id=Some(i),email=e,password=null,name=n, Role.NormalUser.toString)
+      case i~e~n => User(id=Some(i),email=e,password=null,name=n, Role.NormalUser.toString)
     }
   }
 
-  def findOneByEmailAndPassword(email: String, password: String): Option[Account] = {
+  def findOneByEmailAndPassword(email: String, password: String): Option[User] = {
     DB.withConnection{ implicit c =>
-      val maybeAccount: Option[Account] = SQL(
+      val maybeUser: Option[User] = SQL(
         """
         select id, email, name from dd_user where email={email} and password={password};
         """
       ).on(
         'email -> email,
         'password -> password
-      ).as(accountParser.singleOpt)
+      ).as(userParser.singleOpt)
 
-      maybeAccount
+      maybeUser
     }
   }
 
-  def findOneById(id: Long): Option[Account] = {
+  def findOneById(id: Long): Option[User] = {
     DB.withConnection { implicit c =>
-      val maybeAccount: Option[Account] = SQL(
+      val maybeUser: Option[User] = SQL(
         """
         select id, email, name from dd_user where id={id};
         """
       ).on(
         'id -> id
-      ).as(accountParser.singleOpt)
-      maybeAccount
+      ).as(userParser.singleOpt)
+      maybeUser
     }
   }
 

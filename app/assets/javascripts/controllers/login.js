@@ -16,8 +16,8 @@ define(["angular"], function(angular) {
         $http.get("/ping")
         .then(
           function(response) {
-            // Token valid, fetch account data
-            return $http.get("/accounts/" + response.data.accountId);
+            // Token valid, fetch user data
+            return $http.get("/users/" + response.data.userId);
           },
           function(response) {
             token = undefined;
@@ -26,9 +26,9 @@ define(["angular"], function(angular) {
           }
         ).then(
           function(response) {
-            $scope.account = response.data;
+            $scope.user = response.data;
           }, function(response) {
-            // Token invalid or fetching the account failed
+            // Token invalid or fetching the user failed
           }
         );
       }
@@ -42,8 +42,8 @@ define(["angular"], function(angular) {
         .then(
           function(response) { // success
             token = response.data.token;
-            var accountId = response.data.accountId;
-            return $http.get("/accounts/" + accountId); // return another promise to chain `then`
+            var userId = response.data.userId;
+            return $http.get("/users/" + userId); // return another promise to chain `then`
           }, function(response) { // error
             $scope.error = response.data.err;
             // return 'empty' promise so the right `then` function is called
@@ -52,7 +52,7 @@ define(["angular"], function(angular) {
         )
         .then(
           function(response) {
-            $scope.account = response.data;
+            $scope.user = response.data;
           },
           function(response) {
             console.log(response);
@@ -65,13 +65,13 @@ define(["angular"], function(angular) {
        */
       $scope.logout = function() {
         $http.post("/logout").then(function() {
-          $scope.account = undefined;
+          $scope.user = undefined;
         });
       };
 
       /**
        * Pings the server. When the request is not authorized, the $http interceptor should
-       * log out the current account.
+       * log out the current user.
        * When using routes, this is not necessary.
        */
       $scope.ping = function() {
@@ -84,7 +84,7 @@ define(["angular"], function(angular) {
       /** Subscribe to the logout event emitted by the $http interceptor. */
       $scope.$on("InvalidToken", function() {
         console.log("InvalidToken!");
-        $scope.account = undefined;
+        $scope.user = undefined;
       });
     }
   };
