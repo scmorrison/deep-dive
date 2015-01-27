@@ -5,6 +5,9 @@
 # Home page
 GET     /                           controllers.Application.index
 
+# Admin page
+GET     /admin                      controllers.Application.admin
+
 # Send (user,password) to receive token
 POST    /login                      controllers.Application.login()
 # Invalidate token
