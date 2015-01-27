@@ -2,6 +2,8 @@
 
 @main("Welcome to Deep Dive") {
 
+
+
 <div data-ng-controller="LoginCtrl" data-ng-switch="!!user.id" data-ng-cloak>
   <div data-ng-switch-when="false">
     <div class="alert alert-warning" data-ng-show="sessionExpired">
@@ -11,17 +13,21 @@
       <pre>{{error | json}}<pre>
     </div>
     <form>
-      <legend>Please enter your account credentials.</legend>
+      <legend>Welcome to Deep Dive!</legend>
       <input type="text" placeholder="E-mail" data-ng-model="credentials.email" required />
       <input type="password" placeholder="Password" data-ng-model="credentials.password" required />
       <button data-ng-click="login(credentials)">Log In</button>
     </form>
   </div>
   <div data-ng-switch-when="true">
-    <h3>Welcome, {{user.name}}</h3>
+    <h1>Welcome, {{user.name}}</h1>
     <p>
       <a href="" data-ng-click="ping()">Execute Server Action</a>
       <div data-ng-show="ok">Ok!</div>
+    </p>
+
+    <p>
+      <a href="/admin">Let's do some admin work</a>
     </p>
 
     <footer>

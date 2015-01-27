@@ -47,6 +47,11 @@ trait Application extends Controller with Security {
     Ok(views.html.index("Go Deep Dive!"))
   }
 
+  /** Returns the admin page */
+  def admin = Action {
+    Ok(views.html.admin("Go Deep Dive Admin!"))
+  }
+
   case class Login(email: String, password: String)
 
   val loginForm = Form(
