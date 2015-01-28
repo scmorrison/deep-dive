@@ -6,11 +6,11 @@ trait Admin extends Controller with Security {
 
   /** Returns the admin page */
   def admin() = HasToken() { _ => user => implicit request =>
-    Ok(views.html.admin("Go Deep Dive Admin!"))
+    Ok(views.html.index())
   }
 
   def dashboard() = HasToken() { _ => user => implicit request =>
-    Ok(views.html.admin("Go to deep dive"))
+    Ok(views.html.index())
   }
 }
 

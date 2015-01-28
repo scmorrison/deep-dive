@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.libs.json._
+import play.api._
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
@@ -20,6 +21,33 @@ trait Security { self: Controller =>
   val AuthTokenHeader = "X-XSRF-TOKEN"
   val AuthTokenCookieKey = "XSRF-TOKEN"
   val AuthTokenUrlKey = "auth"
+
+  /**
+   * Retrieves all routes via reflection.
+   * http://stackoverflow.com/questions/12012703/less-verbose-way-of-generating-play-2s-javascript-router
+   * @todo If you have controllers in multiple packages, you need to add each package here.
+   */
+  val routeCache = {
+    val jsRoutesClass = classOf[routes.javascript]
+    val controllers = jsRoutesClass.getFields.map(_.get(null))
+    controllers.flatMap { controller =>
+      controller.getClass.getDeclaredMethods.map { action =>
+        action.invoke(controller).asInstanceOf[play.core.Router.JavascriptReverseRoute]
+      }
+    }
+  }
+
+
+  /**
+   * Returns the JavaScript router that the client can use for "type-safe" routes.
+   * Uses browser caching; set duration (in seconds) according to your release cycle.
+   * @param varName The name of the global variable, defaults to `jsRoutes`
+   */
+  def jsRoutes(varName: String = "jsRoutes") = Cached(_ => "jsRoutes", duration = 86400) {
+    Action { implicit request =>
+      Ok(Routes.javascriptRouter(varName)(routeCache: _*)).as(JAVASCRIPT)
+    }
+  }
 
   /** Checks that a token is either in the header or in the query string */
   def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => User => Request[A] => Result): Action[A] =
@@ -44,7 +72,7 @@ trait Application extends Controller with Security {
 
   /** Returns the index page */
   def index = Action {
-    Ok(views.html.index("Go Deep Dive!"))
+    Ok(views.html.index())
   }
 
   case class Login(email: String, password: String)
