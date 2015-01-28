@@ -6,7 +6,9 @@
 GET     /                           controllers.Application.index
 
 # Admin page
-GET     /admin                      controllers.Application.admin
+GET     /admin                      controllers.Admin.admin
+
+GET     /rest/dashboard             controllers.Admin.dashboard
 
 # Send (user,password) to receive token
 POST    /login                      controllers.Application.login()

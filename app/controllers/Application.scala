@@ -22,12 +22,12 @@ trait Security { self: Controller =>
   val AuthTokenUrlKey = "auth"
 
   /** Checks that a token is either in the header or in the query string */
-  def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => Long => Request[A] => Result): Action[A] =
+  def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => User => Request[A] => Result): Action[A] =
     Action(p) { implicit request =>
       val maybeToken = request.headers.get(AuthTokenHeader).orElse(request.getQueryString(AuthTokenUrlKey))
       maybeToken flatMap { token =>
-        Cache.getAs[Long](token) map { userId =>
-          f(token)(userId)(request)
+        Cache.getAs[User](token) map { user =>
+          f(token)(user)(request)
         }
       } getOrElse Unauthorized(Json.obj("err" -> "No Token"))
     }
@@ -47,11 +47,6 @@ trait Application extends Controller with Security {
     Ok(views.html.index("Go Deep Dive!"))
   }
 
-  /** Returns the admin page */
-  def admin = Action {
-    Ok(views.html.admin("Go Deep Dive Admin!"))
-  }
-
   case class Login(email: String, password: String)
 
   val loginForm = Form(
@@ -62,7 +57,7 @@ trait Application extends Controller with Security {
   )
 
   implicit class ResultWithToken(result: Result) {
-    def withToken(token: (String, Long)): Result = {
+    def withToken(token: (String, User)): Result = {
       Cache.set(token._1, token._2, CacheExpiration)
       result.withCookies(Cookie(AuthTokenCookieKey, token._1, None, httpOnly = false))
     }
@@ -82,8 +77,8 @@ trait Application extends Controller with Security {
           val token = java.util.UUID.randomUUID().toString
           Ok(Json.obj(
             "authToken" -> token,
-            "userId" -> user.id.get
-          )).withToken(token -> user.id.get)
+            "user" -> user
+          )).withToken(token -> user)
         } getOrElse NotFound(Json.obj("err" -> "User Not Found or Password Invalid"))
       }
     )
@@ -103,10 +98,8 @@ trait Application extends Controller with Security {
    * Also sets the cookie (useful in some edge cases).
    * This action can be used by the route service.
    */
-  def ping() = HasToken() { token => userId => implicit request =>
-    userService.findOneById (userId) map { user =>
-      Ok(Json.obj("userId" -> userId)).withToken(token -> userId)
-    } getOrElse NotFound (Json.obj("err" -> "User Not Found"))
+  def ping() = HasToken() { token => user => implicit request =>
+      Ok(Json.obj("userId" -> user.id.get)).withToken(token -> user)
   }
 
 }

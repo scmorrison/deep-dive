@@ -38,11 +38,11 @@
               return response;
             },
             function(response) {
-              if (response.status == 401) {
+              if (response.status === 401) {
                 $rootScope.$broadcast("InvalidToken");
                 $rootScope.sessionExpired = true;
                 $timeout(function() {$rootScope.sessionExpired = false;}, 5000);
-              } else if (response.status == 403) {
+              } else if (response.status === 403) {
                 $rootScope.$broadcast("InsufficientPrivileges");
               } else {
                 // Here you could handle other status codes, e.g. retry a 404

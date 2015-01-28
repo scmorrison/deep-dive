@@ -13,7 +13,7 @@
       <pre>{{error | json}}<pre>
     </div>
     <form>
-      <legend>Welcome to Deep Dive!</legend>
+      <h1>Welcome to Deep Dive!</h1>
       <input type="text" placeholder="E-mail" data-ng-model="credentials.email" required />
       <input type="password" placeholder="Password" data-ng-model="credentials.password" required />
       <button data-ng-click="login(credentials)">Log In</button>
@@ -27,15 +27,12 @@
     </p>
 
     <p>
-      <a href="/admin">Let's do some admin work</a>
-    </p>
-
-    <footer>
       <small>
         Logged in as {{user.email}}
         <a href="" data-ng-click="logout()">Log Out</a>
       </small>
-    </footer>
+    </p>
+
   </div>
 </div>
 

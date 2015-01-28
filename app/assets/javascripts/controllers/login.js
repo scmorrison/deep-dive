@@ -42,7 +42,7 @@ define(["angular"], function(angular) {
         .then(
           function(response) { // success
             token = response.data.token;
-            var userId = response.data.userId;
+            var userId = response.data.user.id;
             return $http.get("/users/" + userId); // return another promise to chain `then`
           }, function(response) { // error
             $scope.error = response.data.err;
@@ -80,6 +80,7 @@ define(["angular"], function(angular) {
           $timeout(function() {$scope.ok = false;}, 3000);
         });
       };
+
 
       /** Subscribe to the logout event emitted by the $http interceptor. */
       $scope.$on("InvalidToken", function() {
