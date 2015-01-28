@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.libs.json._
+import play.api._
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
@@ -21,13 +22,40 @@ trait Security { self: Controller =>
   val AuthTokenCookieKey = "XSRF-TOKEN"
   val AuthTokenUrlKey = "auth"
 
+  /**
+   * Retrieves all routes via reflection.
+   * http://stackoverflow.com/questions/12012703/less-verbose-way-of-generating-play-2s-javascript-router
+   * @todo If you have controllers in multiple packages, you need to add each package here.
+   */
+  val routeCache = {
+    val jsRoutesClass = classOf[routes.javascript]
+    val controllers = jsRoutesClass.getFields.map(_.get(null))
+    controllers.flatMap { controller =>
+      controller.getClass.getDeclaredMethods.map { action =>
+        action.invoke(controller).asInstanceOf[play.core.Router.JavascriptReverseRoute]
+      }
+    }
+  }
+
+
+  /**
+   * Returns the JavaScript router that the client can use for "type-safe" routes.
+   * Uses browser caching; set duration (in seconds) according to your release cycle.
+   * @param varName The name of the global variable, defaults to `jsRoutes`
+   */
+  def jsRoutes(varName: String = "jsRoutes") = Cached(_ => "jsRoutes", duration = 86400) {
+    Action { implicit request =>
+      Ok(Routes.javascriptRouter(varName)(routeCache: _*)).as(JAVASCRIPT)
+    }
+  }
+
   /** Checks that a token is either in the header or in the query string */
-  def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => Long => Request[A] => Result): Action[A] =
+  def HasToken[A](p: BodyParser[A] = parse.anyContent)(f: String => User => Request[A] => Result): Action[A] =
     Action(p) { implicit request =>
       val maybeToken = request.headers.get(AuthTokenHeader).orElse(request.getQueryString(AuthTokenUrlKey))
       maybeToken flatMap { token =>
-        Cache.getAs[Long](token) map { userId =>
-          f(token)(userId)(request)
+        Cache.getAs[User](token) map { user =>
+          f(token)(user)(request)
         }
       } getOrElse Unauthorized(Json.obj("err" -> "No Token"))
     }
@@ -44,12 +72,7 @@ trait Application extends Controller with Security {
 
   /** Returns the index page */
   def index = Action {
-    Ok(views.html.index("Go Deep Dive!"))
-  }
-
-  /** Returns the admin page */
-  def admin = Action {
-    Ok(views.html.admin("Go Deep Dive Admin!"))
+    Ok(views.html.index())
   }
 
   case class Login(email: String, password: String)
@@ -62,7 +85,7 @@ trait Application extends Controller with Security {
   )
 
   implicit class ResultWithToken(result: Result) {
-    def withToken(token: (String, Long)): Result = {
+    def withToken(token: (String, User)): Result = {
       Cache.set(token._1, token._2, CacheExpiration)
       result.withCookies(Cookie(AuthTokenCookieKey, token._1, None, httpOnly = false))
     }
@@ -82,8 +105,8 @@ trait Application extends Controller with Security {
           val token = java.util.UUID.randomUUID().toString
           Ok(Json.obj(
             "authToken" -> token,
-            "userId" -> user.id.get
-          )).withToken(token -> user.id.get)
+            "user" -> user
+          )).withToken(token -> user)
         } getOrElse NotFound(Json.obj("err" -> "User Not Found or Password Invalid"))
       }
     )
@@ -103,10 +126,8 @@ trait Application extends Controller with Security {
    * Also sets the cookie (useful in some edge cases).
    * This action can be used by the route service.
    */
-  def ping() = HasToken() { token => userId => implicit request =>
-    userService.findOneById (userId) map { user =>
-      Ok(Json.obj("userId" -> userId)).withToken(token -> userId)
-    } getOrElse NotFound (Json.obj("err" -> "User Not Found"))
+  def ping() = HasToken() { token => user => implicit request =>
+      Ok(Json.obj("userId" -> user.id.get)).withToken(token -> user)
   }
 
 }

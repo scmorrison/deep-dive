@@ -41,13 +41,13 @@ object User {
       (__ \ "email").write[String] ~
       (__ \ "password").writeNullable[String] ~
       (__ \ "name").write[String] ~
-      (__ \ "role").writeNullable[String]
+      (__ \ "role").write[String]
   )((user: User) => (
     user.id,
     user.email,
     None,
     user.name,
-    None  // TODO: implement role
+    user.role
   ))
 }
 
